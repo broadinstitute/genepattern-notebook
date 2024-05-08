@@ -107,7 +107,8 @@ class GPTaskWidget(UIBuilder):
         for group in groups:                                                                # Escape param names
             if 'parameters' in group:
                 for i in range(len(group['parameters'])):
-                    group['parameters'][i] = python_safe(group['parameters'][i])
+                    if isinstance(group['parameters'][i], str):
+                        group['parameters'][i] = python_safe(group['parameters'][i])
 
         # Nest sub-groups
         sub_groups = [group for group in groups if '/' in group.get('name', '')]
