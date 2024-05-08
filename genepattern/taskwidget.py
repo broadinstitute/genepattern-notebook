@@ -103,12 +103,31 @@ class GPTaskWidget(UIBuilder):
         groups = task.param_groups if hasattr(task, 'param_groups') else param_groups(task)     # Get param groups
         job_options_group = task.job_group if hasattr(task, 'job_group') else job_group(task)   # Get job options
         job_options_group['advanced'] = True                                                    # Hide by default
-        all_groups = groups + [job_options_group]                                               # Join groups
-        for group in all_groups:                                                                # Escape param names
+        groups = groups + [job_options_group]                                               # Join groups
+        for group in groups:                                                                # Escape param names
             if 'parameters' in group:
                 for i in range(len(group['parameters'])):
                     group['parameters'][i] = python_safe(group['parameters'][i])
-        return all_groups
+
+        # Nest sub-groups
+        sub_groups = [group for group in groups if '/' in group.get('name', '')]
+        groups = [group for group in groups if '/' not in group.get('name', '')]
+        for group in sub_groups:
+            path = group['name'].split('/')
+            group['name'] = path[-1]
+            selected = groups
+            found = False
+            for p in path:
+                for g in selected:
+                    if isinstance(g, dict) and g.get('name', '') == p:
+                        if 'parameters' not in g: g['parameters'] = []
+                        selected = g['parameters']
+                        found = True
+                        continue
+                if not found: selected.append(group)
+                else: found = False
+
+        return groups
 
     def generate_upload_callback(self):
         """Create an upload callback to pass to file input widgets"""
