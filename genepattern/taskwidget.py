@@ -1,6 +1,7 @@
 import inspect
 import json
 import os
+from copy import deepcopy
 from decimal import Decimal
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
@@ -98,12 +99,11 @@ class GPTaskWidget(UIBuilder):
             self.add_type_spec(p, spec[safe_name])
         return spec
 
-    @staticmethod
-    def extract_parameter_groups(task):
-        groups = task.param_groups if hasattr(task, 'param_groups') else param_groups(task)     # Get param groups
-        job_options_group = task.job_group if hasattr(task, 'job_group') else job_group(task)   # Get job options
+    def extract_parameter_groups(self):
+        groups = self.task.param_groups if hasattr(self.task, 'param_groups') else param_groups(self.task)     # Get param groups
+        job_options_group = self.task.job_group if hasattr(self.task, 'job_group') else job_group(self.task)   # Get job options
         job_options_group['advanced'] = True                                                    # Hide by default
-        groups = groups + [job_options_group]                                               # Join groups
+        groups = deepcopy(groups) + [job_options_group]                                               # Join groups
         for group in groups:                                                                # Escape param names
             if 'parameters' in group:
                 for i in range(len(group['parameters'])):
@@ -127,7 +127,6 @@ class GPTaskWidget(UIBuilder):
                         continue
                 if not found: selected.append(group)
                 else: found = False
-
         return groups
 
     def generate_upload_callback(self):
@@ -176,7 +175,7 @@ class GPTaskWidget(UIBuilder):
                 'license_callback': self.generate_license_callback(),
                 'logo': GENEPATTERN_LOGO,
                 'origin': origin,
-                'parameter_groups': GPTaskWidget.extract_parameter_groups(self.task),
+                'parameter_groups': self.extract_parameter_groups(),
                 'parameters': self.parameter_spec,
                 'subtitle': f'Version {task.version}',
                 'upload_callback': self.generate_upload_callback(),
